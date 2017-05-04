@@ -14,9 +14,9 @@ RUN apt-get install -y autoconf automake bison build-essential flex gawk gettext
 
 # Now compile
 WORKDIR /opt/padavan-psg1218/toolchain-mipsel
-RUN ./clean_sources && ./build_toolchain
+#RUN ./clean_sources && ./build_toolchain
 
 # Other actions
-VOLUME /mnt
+#VOLUME /mnt
 
-ENTRYPOINT /bin/bash
+ENTRYPOINT /bin/sh
