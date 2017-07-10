@@ -1,23 +1,24 @@
-FROM ubuntu:16.04
+FROM jupyter/datascience-notebook
 
-MAINTAINER Nick Wang <chaoqingwang.nick@gmail.com>
+USER root
 
-RUN apt-get update 
-RUN apt-get install -y git
+RUN  DEBIAN_FRONTEND=noninteractive apt-get update \
+     && DEBIAN_FRONTEND=noninteractive apt-get install -y libapparmor1 libedit2 lsb-release libbsd0 \
+     && apt-get autoclean -y && rm -rf /var/lib/apt/lists/* \
+     && RSTUDIO_VERSION=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
+	&& RSTUDIO_DEB=rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
+	&& wget -q "http://172.17.0.1:8000/${RSTUDIO_DEB}" \
+	|| wget -q "http://download2.rstudio.org/${RSTUDIO_DEB}" \
+        && ls -alh \
 
-# Get the source code
-WORKDIR /opt
-RUN git clone https://chaoqing@bitbucket.org/chaoqing/padavan-psg1218.git
+     && dpkg -i ${RSTUDIO_DEB} \
+     && echo rsession-which-r=/opt/conda/bin/R >> /etc/rstudio/rserver.conf \
+     && sed -e '/echo "Execute the command as $NB_USER"/a \ \ \ \ su $NB_USER -c "nohup /usr/sbin/rstudio-server start 2>&1 >> /tmp/rstudio-server.log&"' \
+	    -e '/echo "Execute the command"/a \ \ \ \ nohup /usr/sbin/rstudio-server start 2>&1 >> /tmp/rstudio-server.log&' \
+	    -i /usr/local/bin/start.sh \
 
-# Install required packages
-RUN apt-get install -y autoconf automake bison build-essential flex gawk gettext gperf libtool pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev texinfo python-docutils mc autopoint
+     && rm -rf ${RSTUDIO_DEB}
 
-# Now compile
-WORKDIR /opt/padavan-psg1218/toolchain-mipsel
-RUN ./clean_sources 
-RUN ./build_toolchain
+USER $NB_USER
 
-# Other actions
-VOLUME /mnt
-
-ENTRYPOINT /bin/sh
+EXPOSE 8787
