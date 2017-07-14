@@ -1,24 +1,22 @@
-FROM jupyter/datascience-notebook
+FROM ubuntu:16.04
 
-USER root
+ARG UID=1000
+ARG GID=1000
+ARG PROXY=
 
-RUN  DEBIAN_FRONTEND=noninteractive apt-get update \
-     && DEBIAN_FRONTEND=noninteractive apt-get install -y libapparmor1 libedit2 lsb-release libbsd0 \
-     && apt-get autoclean -y && rm -rf /var/lib/apt/lists/* \
-     && RSTUDIO_VERSION=$(wget --no-check-certificate -qO- https://s3.amazonaws.com/rstudio-server/current.ver) \
-	&& RSTUDIO_DEB=rstudio-server-${RSTUDIO_VERSION}-amd64.deb \
-	&& wget -q "http://172.17.0.1:8000/${RSTUDIO_DEB}" \
-	|| wget -q "http://download2.rstudio.org/${RSTUDIO_DEB}" \
-        && ls -alh \
+ENV USERNAME firefox
 
-     && dpkg -i ${RSTUDIO_DEB} \
-     && echo rsession-which-r=/opt/conda/bin/R >> /etc/rstudio/rserver.conf \
-     && sed -e '/echo "Execute the command as $NB_USER"/a \ \ \ \ su $NB_USER -c "nohup /usr/sbin/rstudio-server start 2>&1 >> /tmp/rstudio-server.log&"' \
-	    -e '/echo "Execute the command"/a \ \ \ \ nohup /usr/sbin/rstudio-server start 2>&1 >> /tmp/rstudio-server.log&' \
-	    -i /usr/local/bin/start.sh \
+RUN test -z PROXY || echo "Acquire::http { Proxy \"${PROXY}\"; };" >> /etc/apt/apt.conf.d/01proxy \
+	&& apt-get update \
+	&& apt-get install -y firefox language-pack-zh-hans ttf-wqy-microhei --no-install-recommends \
+	&& rm -rf /var/lib/apt/lists/* \
+	&& mkdir -p /home/${USERNAME} /etc/sudoers.d \
+	&& echo "${USERNAME}:x:${UID}:${GID}:Developer,,,:/home/${USERNAME}:/bin/bash" >> /etc/passwd \
+	&& echo "${USERNAME}:x:${UID}:" >> /etc/group \
+	&& echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USERNAME} \
+	&& chmod 0440 /etc/sudoers.d/${USERNAME} \
+	&& chown ${UID}:${GID} -R /home/${USERNAME}
 
-     && rm -rf ${RSTUDIO_DEB}
-
-USER $NB_USER
-
-EXPOSE 8787
+USER ${USERNAME}
+ENV HOME /home/${USERNAME}
+CMD /usr/bin/firefox
