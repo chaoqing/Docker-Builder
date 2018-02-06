@@ -1,4 +1,4 @@
-from go
+from golang
 
 RUN git clone http://github.com/Microsoft/hdfs-mount --recursive && cd hdfs-mount && \
 	make && echo $(sha256sum hdfs-mount) > hdfs-mount-with-sha && base64 hdfs-mount >> hdfs-mount-with-sha && \
