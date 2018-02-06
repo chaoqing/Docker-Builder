@@ -1,6 +1,6 @@
 from golang
 
 RUN git clone http://github.com/Microsoft/hdfs-mount --recursive && cd hdfs-mount && \
-	make && echo $(sha256sum hdfs-mount) > hdfs-mount-with-sha && base64 hdfs-mount >> hdfs-mount-with-sha && \
-	URL=$(curl -s --upload-file hdfs-mount-with-sha https://transfer.sh/hdfs-mount-with-sha) && \
-	echo "\n==== wget $URL && tail -n +2 hdfs-mount-with-sha |base64 -d > hdfs-mount ====\n" 
+	make && SHA256SUM=$(sha256sum hdfs-mount) && \
+	URL=$(curl -s --upload-file hdfs-mount https://transfer.sh/hdfs-mount_$SHA256SUM) && \
+	echo "\n==== wget $URL ====\n" 
